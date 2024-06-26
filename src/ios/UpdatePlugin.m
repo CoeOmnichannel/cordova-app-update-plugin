@@ -59,8 +59,8 @@ NSString *appStoreURL = nil;
     NSLog(@"bundleIdentifier");
     NSLog(@"%@", bundleIdentifier);
     
-    NSLocale *currentLocale = [NSLocale currentLocale];
-    /*NSString *countryCode = [currentLocale objectForKey:NSLocaleCountryCode];*/
+    /*NSLocale *currentLocale = [NSLocale currentLocale];
+    NSString *countryCode = [currentLocale objectForKey:NSLocaleCountryCode];*/
     NSURL *lookupURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://itunes.apple.com/lookup?bundleId=%@&t=%f",
                                              bundleIdentifier, [NSDate.date timeIntervalSince1970]]]; //&country=%@ ,countryCode
    
