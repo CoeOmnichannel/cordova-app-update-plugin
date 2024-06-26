@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
-        id="cordova-in-app-update" version="0.0.1">
+        id="cordova-in-app-update" version="0.0.2">
     <name>UpdatePlugin</name>
 
     <description>An Android Cordova plugin that allows users to update app to letest version without leaving the application.</description>
@@ -24,8 +24,8 @@
                 <param name="android-package" value="com.mrspark.cordova.plugin.UpdatePlugin"/>
             </feature>
         </config-file>
-        <framework src="com.android.support:appcompat-v7:+" />
-        <framework src="com.android.support:design:+" />
+        <framework src="com.google.android.play:app-update:2.1.0" />
+        <framework src="com.google.android.material:material:1.2.0" />
          <!-- edit-config file="AndroidManifest.xml" target="/manifest/application/activity[@android:name='MainActivity']" mode="merge">
             <activity android:name="MainActivity" android:theme="@style/Theme.AppCompat.NoActionBar" />
         </edit-config -->
