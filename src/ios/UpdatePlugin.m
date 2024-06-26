@@ -145,6 +145,7 @@ NSString *appStoreURL = nil;
 
 - (void)update:(CDVInvokedUrlCommand*)command
 {
+    printf("Entrei");
     CDVPluginResult* pluginResult = nil;
     NSDictionary *args = [command.arguments objectAtIndex:0];
     NSDictionary *iosArgs = args[@"IOS"];
