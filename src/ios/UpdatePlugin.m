@@ -42,7 +42,9 @@ NSString *appStoreURL = nil;
     NSString *bundleIdentifier = bundleInfo[@"CFBundleIdentifier"];
     NSString *currentVersion = bundleInfo[@"CFBundleShortVersionString"];
 
-    NSURL *lookupURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://itunes.apple.com/lookup?bundleId=%@&t=%f", bundleIdentifier, [NSDate.date timeIntervalSince1970]]];
+    NSLocale *currentLocale = [NSLocale currentLocale];
+    NSString *countryCode = [currentLocale objectForKey:NSLocaleCountryCode];
+    NSURL *lookupURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://itunes.apple.com/lookup?bundleId=%@&t=%f&country=%@", bundleIdentifier, [NSDate.date timeIntervalSince1970],countryCode]];
    
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         NSData *lookupResults = [NSData dataWithContentsOfURL:lookupURL];
