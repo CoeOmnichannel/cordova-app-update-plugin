@@ -2,86 +2,69 @@
 #import <Cordova/CDVPlugin.h>
 #import "SystemConfiguration/SystemConfiguration.h"
 
-@interface Updater:NSObject
+@interface Updater: NSObject
 
-@property NSString *alertTitle;
-@property NSString *alertMessage;
-@property NSString *alertUpdateButtonTitle;
-@property NSString *alertCancelButtonTitle;
-@property NSString *version;
-@property NSString *appName;
+@property (nullable, nonatomic, strong) NSString *alertTitle;
+@property (nullable, nonatomic, strong) NSString *alertMessage;
+@property (nullable, nonatomic, strong) NSString *alertUpdateButtonTitle;
+@property (nullable, nonatomic, strong) NSString *alertCancelButtonTitle;
+@property (nullable, nonatomic, strong) NSString *version;
+@property (nullable, nonatomic, strong) NSString *appName;
 
 @end
 
-
 @implementation Updater
 
-- (BOOL)hasConnection
-{
+- (BOOL)hasConnection {
     const char *host = "itunes.apple.com";
-    BOOL reachable;
-    BOOL success;
     SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, host);
     SCNetworkReachabilityFlags flags;
-    success = SCNetworkReachabilityGetFlags(reachability, &flags);
-    reachable = success && (flags & kSCNetworkFlagsReachable) && !(flags & kSCNetworkFlagsConnectionRequired);
+    BOOL success = SCNetworkReachabilityGetFlags(reachability, &flags);
+    BOOL reachable = success && (flags & kSCNetworkFlagsReachable) && !(flags & kSCNetworkFlagsConnectionRequired);
     CFRelease(reachability);
     return reachable;
 }
 
 NSString *appStoreURL = nil;
 
-+ (NSInteger)daysBetweenDate:(NSDate*)fromDateTime endDate:(NSDate*)toDateTime
-{
++ (NSInteger)daysBetweenDate:(NSDate *)fromDateTime endDate:(NSDate *)toDateTime {
     NSDate *fromDate;
     NSDate *toDate;
-
     NSCalendar *calendar = [NSCalendar currentCalendar];
-
-    [calendar rangeOfUnit:NSCalendarUnitDay startDate:&fromDate
-        interval:NULL forDate:fromDateTime];
-    [calendar rangeOfUnit:NSCalendarUnitDay startDate:&toDate
-        interval:NULL forDate:toDateTime];
-
-    NSDateComponents *difference = [calendar components:NSCalendarUnitDay
-        fromDate:fromDate toDate:toDate options:0];
-
+    [calendar rangeOfUnit:NSCalendarUnitDay startDate:&fromDate interval:NULL forDate:fromDateTime];
+    [calendar rangeOfUnit:NSCalendarUnitDay startDate:&toDate interval:NULL forDate:toDateTime];
+    NSDateComponents *difference = [calendar components:NSCalendarUnitDay fromDate:fromDate toDate:toDate options:0];
     return [difference day];
 }
 
-
-- (void)checkNewAppVersion:(void(^)(BOOL newVersion, NSInteger days))completion
-{
+- (void)checkNewAppVersion:(void(^)(BOOL newVersion, NSInteger days))completion {
     NSDictionary *bundleInfo = [[NSBundle mainBundle] infoDictionary];
     NSString *bundleIdentifier = bundleInfo[@"CFBundleIdentifier"];
     NSString *currentVersion = bundleInfo[@"CFBundleShortVersionString"];
 
-    NSLog(@"bundleIdentifier");
-    NSLog(@"%@", bundleIdentifier);
-    
-    /*NSLocale *currentLocale = [NSLocale currentLocale];
-    NSString *countryCode = [currentLocale objectForKey:NSLocaleCountryCode];*/
-    NSURL *lookupURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://itunes.apple.com/lookup?bundleId=%@&t=%f",
-                                             bundleIdentifier, [NSDate.date timeIntervalSince1970]]]; //&country=%@ ,countryCode
+    NSURL *lookupURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://itunes.apple.com/lookup?bundleId=%@&t=%f", bundleIdentifier, [NSDate.date timeIntervalSince1970]]];
    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^(void) {
-       
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         NSData *lookupResults = [NSData dataWithContentsOfURL:lookupURL];
         if (!lookupResults) {
             completion(NO, 0);
             return;
         }
        
-        NSDictionary *jsonResults = [NSJSONSerialization JSONObjectWithData:lookupResults options:0 error:nil];
+        NSError *error = nil;
+        NSDictionary *jsonResults = [NSJSONSerialization JSONObjectWithData:lookupResults options:0 error:&error];
+        if (error) {
+            completion(NO, 0);
+            return;
+        }
        
-        dispatch_async(dispatch_get_main_queue(), ^(void) {
+        dispatch_async(dispatch_get_main_queue(), ^{
             NSUInteger resultCount = [jsonResults[@"resultCount"] integerValue];
-            if (resultCount){
-                
+            if (resultCount > 0) {
                 NSDictionary *appDetails = [jsonResults[@"results"] firstObject];
                 NSString *appItunesUrl = [appDetails[@"trackViewUrl"] stringByReplacingOccurrencesOfString:@"&uo=4" withString:@""];
                 NSString *latestVersion = appDetails[@"version"];
-                NSString *currentVersionReleaseDate = appDetails [@"currentVersionReleaseDate"];
+                NSString *currentVersionReleaseDate = appDetails[@"currentVersionReleaseDate"];
                 NSDateFormatter *dateFormatter = [NSDateFormatter new];
                 [dateFormatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZ"];
                 NSDate *releaseDate = [dateFormatter dateFromString:currentVersionReleaseDate];
@@ -96,7 +79,6 @@ NSString *appStoreURL = nil;
                 } else {
                     completion(NO, 0);
                 }
-                
             } else {
                 completion(NO, 0);
             }
@@ -104,27 +86,20 @@ NSString *appStoreURL = nil;
     });
 }
 
-- (void)alertUpdateWithForce:(BOOL)force
-{
+- (void)alertUpdateWithForce:(BOOL)force {
     UIWindow *foundWindow = nil;
-    NSArray *windows = [[UIApplication sharedApplication] windows];
-
-    for (UIWindow *window in windows) {
+    for (UIWindow *window in [[UIApplication sharedApplication] windows]) {
         if (window.isKeyWindow) {
             foundWindow = window;
             break;
         }
     }
-    if (foundWindow)
-    {
-        self.alertMessage =  [self.alertMessage stringByReplacingOccurrencesOfString:@"__version__" withString:self.version];
-        self.alertMessage =  [self.alertMessage stringByReplacingOccurrencesOfString:@"__appName__" withString:self.appName];
+    if (foundWindow) {
+        self.alertMessage = [self.alertMessage stringByReplacingOccurrencesOfString:@"__version__" withString:self.version];
+        self.alertMessage = [self.alertMessage stringByReplacingOccurrencesOfString:@"__appName__" withString:self.appName];
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:self.alertTitle message:self.alertMessage preferredStyle:UIAlertControllerStyleAlert];
         UIAlertAction *updateAction = [UIAlertAction actionWithTitle:self.alertUpdateButtonTitle style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
             [[UIApplication sharedApplication] openURL:[NSURL URLWithString:appStoreURL] options:@{} completionHandler:nil];
-            if(force){
-                [foundWindow.rootViewController presentViewController:alert animated:YES completion:nil];
-            }
         }];
         [alert addAction:updateAction];
 
@@ -139,14 +114,10 @@ NSString *appStoreURL = nil;
 
 @end
 
-
-
 @implementation CDVUpdatePlugin
 
-- (void)update:(CDVInvokedUrlCommand*)command
-{
-    printf("Entrei");
-    CDVPluginResult* pluginResult = nil;
+- (void)update:(CDVInvokedUrlCommand *)command {
+    CDVPluginResult *pluginResult = nil;
     NSDictionary *args = [command.arguments objectAtIndex:0];
     NSDictionary *iosArgs = args[@"IOS"];
     Updater *updater = [Updater new];
@@ -155,64 +126,37 @@ NSString *appStoreURL = nil;
     updater.alertUpdateButtonTitle = iosArgs[@"alertUpdateButtonTitle"];
     updater.alertCancelButtonTitle = iosArgs[@"alertCancelButtonTitle"];
 
-    NSLog(@"alertTitle");
-    NSLog(@"%@", iosArgs[@"alertTitle"]);
-    NSLog(@"alertMessage");
-    NSLog(@"%@", iosArgs[@"alertMessage"]);
-    NSLog(@"alertUpdateButtonTitle");
-    NSLog(@"%@", iosArgs[@"alertUpdateButtonTitle"]);
-    NSLog(@"alertCancelButtonTitle");
-    NSLog(@"%@", iosArgs[@"alertCancelButtonTitle"]);
-
-    NSLog(@"type");
-    NSLog(@"%@", iosArgs[@"type"]);
-    NSLog(@"flexibleUpdateStalenessDays");
-    NSLog(@"%@", iosArgs[@"flexibleUpdateStalenessDays"]);
-    NSLog(@"immediateUpdateStalenessDays");
-    NSLog(@"%@", iosArgs[@"immediateUpdateStalenessDays"]);
-    NSLog(@"stallDays");
-    NSLog(@"%@", iosArgs[@"stallDays"]);
-    
     BOOL hasConnection = [updater hasConnection];
     if (hasConnection) {
         [updater checkNewAppVersion:^(BOOL newVersion, NSInteger days) {
-            if(newVersion){
+            if (newVersion) {
                 NSString *type = iosArgs[@"type"];
-                if([type isEqual:@"MIXED"]){
+                if ([type isEqual:@"MIXED"]) {
                     NSInteger flexibleUpdateStalenessDays = [iosArgs[@"flexibleUpdateStalenessDays"] integerValue];
                     NSInteger immediateUpdateStalenessDays = [iosArgs[@"immediateUpdateStalenessDays"] integerValue];
-                    if(days >= immediateUpdateStalenessDays){
+                    if (days >= immediateUpdateStalenessDays) {
                         [updater alertUpdateWithForce:YES];
-                    }
-                    else if(days >= flexibleUpdateStalenessDays){
+                    } else if (days >= flexibleUpdateStalenessDays) {
                         [updater alertUpdateWithForce:NO];
                     }
-                }
-                else if([type isEqual:@"FLEXIBLE"]){
+                } else if ([type isEqual:@"FLEXIBLE"]) {
                     NSInteger stallDays = [iosArgs[@"stallDays"] integerValue];
-                    if(days >= stallDays){
+                    if (days >= stallDays) {
                         [updater alertUpdateWithForce:NO];
                     }
-                }
-                else if([type isEqual:@"IMMEDIATE"]){
+                } else if ([type isEqual:@"IMMEDIATE"]) {
                     NSInteger stallDays = [iosArgs[@"stallDays"] integerValue];
-                    if(days >= stallDays){
+                    if (days >= stallDays) {
                         [updater alertUpdateWithForce:YES];
                     }
                 }
             }
         }];
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"success"];
-    }
-    else
-    {
+    } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"failure"];
     }
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 @end
-
-
-
- 
