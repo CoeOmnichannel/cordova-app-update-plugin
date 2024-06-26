@@ -153,6 +153,24 @@ NSString *appStoreURL = nil;
     updater.alertMessage = iosArgs[@"alertMessage"];
     updater.alertUpdateButtonTitle = iosArgs[@"alertUpdateButtonTitle"];
     updater.alertCancelButtonTitle = iosArgs[@"alertCancelButtonTitle"];
+
+    NSLog(@"alertTitle");
+    NSLog(@"%@", iosArgs[@"alertTitle"]);
+    NSLog(@"alertMessage");
+    NSLog(@"%@", iosArgs[@"alertMessage"]);
+    NSLog(@"alertUpdateButtonTitle");
+    NSLog(@"%@", iosArgs[@"alertUpdateButtonTitle"]);
+    NSLog(@"alertCancelButtonTitle");
+    NSLog(@"%@", iosArgs[@"alertCancelButtonTitle"]);
+
+    NSLog(@"type");
+    NSLog(@"%@", iosArgs[@"type"]);
+    NSLog(@"flexibleUpdateStalenessDays");
+    NSLog(@"%@", iosArgs[@"flexibleUpdateStalenessDays"]);
+    NSLog(@"immediateUpdateStalenessDays");
+    NSLog(@"%@", iosArgs[@"immediateUpdateStalenessDays"]);
+    NSLog(@"stallDays");
+    NSLog(@"%@", iosArgs[@"stallDays"]);
     
     BOOL hasConnection = [updater hasConnection];
     if (hasConnection) {
